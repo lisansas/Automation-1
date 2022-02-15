@@ -13,31 +13,39 @@ jobs:
     - name: CI
       run: |
         sudo timedatectl set-timezone "Asia/Shanghai"
-        rm -f ./china.conf
-        rm -f ./china_no_speedtest.conf
-        rm -f ./china.conf.gz
-        rm -f ./china_no_speedtest.conf.gz
+        rm -f ./accelerated-domains.china_no_speedtest.conf
+        rm -f ./accelerated-domains.china.conf
+        rm -f ./accelerated-domains.china_no_speedtest.conf.gz
+        rm -f ./accelerated-domains.china.smartdns.conf.gz
         rm -f ./bogus-nxdomain.china.smartdns.conf
-        wget -O ./raw.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
-        wget -O ./apple.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/apple.china.conf
-        wget -O ./google.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/google.china.conf
-        wget -O ./bogus-nxdomain.china.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/bogus-nxdomain.china.conf
-        cat ./apple.conf >> ./raw.conf 2>/dev/null
-        cat ./google.conf >> ./raw.conf 2>/dev/null
-        rm -f ./apple.conf
-        rm -f ./google.conf
-        sed -e 's|^server=/\(.*\)/114.114.114.114$$|\1|' ./raw.conf | egrep -v '^#' > ./china.raw.txt
-        sed -e "s|\(.*\)|domain-rules /\1/ -c none -n china|" ./china.raw.txt > ./china_no_speedtest.conf
-        sed -e "s|\(.*\)|nameserver /\1/china|" ./china.raw.txt > ./china.conf
-        sed -e "s|=| |" ./bogus-nxdomain.china.conf > ./bogus-nxdomain.china.smartdns.conf
+        git clone --depth=1 https://github.com/felixonmars/dnsmasq-china-list
+        cd dnsmasq-china-list
+        sed -i 's/SERVER\=114.114.114.114/SERVER\=china/g' Makefile
+        sed -i 's/SMARTDNS_SPEEDTEST_MODE\=ping,tcp:80/SMARTDNS_SPEEDTEST_MODE\=none/g' Makefile
+        make smartdns-domain-rules
+        cat ./apple.china.domain.smartdns.conf >> ./accelerated-domains.china.domain.smartdns.conf 2>/dev/null
+        cat ./google.china.domain.smartdns.conf >> ./accelerated-domains.china.domain.smartdns.conf 2>/dev/null
+        rm -f ./apple.china.domain.smartdns.conf
+        rm -f ./google.china.domain.smartdns.conf
+        cp accelerated-domains.china.domain.smartdns.conf ../china_no_speedtest.conf
+        make smartdns
+        cat ./apple.china.smartdns.conf >> ./accelerated-domains.china.smartdns.conf 2>/dev/null
+        cat ./google.china.smartdns.conf >> ./accelerated-domains.china.smartdns.conf 2>/dev/null
+        rm -f ./apple.china.smartdns.conf
+        rm -f ./google.china.smartdns.conf
+        cp accelerated-domains.china.smartdns.conf ../china.conf
+        cp bogus-nxdomain.china.smartdns.conf ../bogus-nxdomain.china.smartdns.conf
+        cd ..
+        sed -i 's/\-speed\-check\-mode none \-nameserver/\-c none \-n/g' china_no_speedtest.conf
         TIME=`date +%Y.%m.%d-%H:%M:%S`
         sed -i "1i#Updated at $TIME" china_no_speedtest.conf
         sed -i "1i#Updated at $TIME" china.conf
+        sed -i "1i#Updated at $TIME" bogus-nxdomain.china.smartdns.conf
+        # mv accelerated-domains.china.domain.smartdns.conf china_no_speedtest.conf
+        # mv accelerated-domains.china.smartdns.conf china.conf
         gzip --best -c  china_no_speedtest.conf >china_no_speedtest.conf.gz
         gzip --best -c  china.conf >china.conf.gz
-        rm -f ./raw.conf
-        rm -f ./china.raw.txt
-        rm -f ./bogus-nxdomain.china.conf
+        rm -rf ./dnsmasq-china-list
     - name: Commit files
       run: |
         git add .
