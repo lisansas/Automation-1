@@ -14,18 +14,29 @@ jobs:
       run: |
         sudo timedatectl set-timezone "Asia/Shanghai"
         rm -f ./china.conf
+        rm -f ./china_no_speedtest.conf
         rm -f ./china.conf.gz
+        rm -f ./china_no_speedtest.conf.gz
+        rm -f ./bogus-nxdomain.china.smartdns.conf
         wget -O ./china.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
         wget -O ./apple.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/apple.china.conf
         wget -O ./google.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/google.china.conf
+        wget -O ./google.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/bogus-nxdomain.china.conf
         cat ./apple.conf >> ./china.conf 2>/dev/null
         cat ./google.conf >> ./china.conf 2>/dev/null
+        sed -e 's|^server=/\(.*\)/114.114.114.114$$|\1|' ./china.conf | egrep -v '^#' > ./china.raw.txt
+        sed -e "s|\(.*\)|domain-rules /\1/ -c none -n china|" ./china.raw.txt > ./china_no_speedtest.conf
+        sed -e "s|\(.*\)|nameserver /\1/$(SERVER)|" ./china.raw.txt > ./china.conf
+        sed -e "s|=| |" ./bogus-nxdomain.china.conf > ./bogus-nxdomain.china.smartdns.conf
+        TIME=`date +%Y.%m.%d-%H:%M:%S`
+        sed -i "1i#Updated at $TIME" china_no_speedtest.conf
+        sed -i "1i#Updated at $TIME" china.conf
+        gzip --best -c  china_no_speedtest.conf >china_no_speedtest.conf.gz
+        gzip --best -c  china.conf >china.conf.gz
         rm -f ./apple.conf
         rm -f ./google.conf
-        sed -i "s/^server=\/\(.*\)\/[^\/]*$/nameserver \/\1\/china/g;/^nameserver/!d" ./china.conf 2>/dev/null
-        TIME=`date +%Y.%m.%d-%H:%M:%S`
-        sed -i "1i#Updated at $TIME" china.conf
-        gzip --best -c  china.conf >china.conf.gz
+        rm -f ./china.raw.txt
+        rm -f ./bogus-nxdomain.china.conf
     - name: Commit files
       run: |
         git add .
