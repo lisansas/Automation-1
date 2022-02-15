@@ -21,7 +21,7 @@ jobs:
         wget -O ./china.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
         wget -O ./apple.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/apple.china.conf
         wget -O ./google.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/google.china.conf
-        wget -O ./google.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/bogus-nxdomain.china.conf
+        wget -O ./bogus-nxdomain.china.conf https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/bogus-nxdomain.china.conf
         cat ./apple.conf >> ./china.conf 2>/dev/null
         cat ./google.conf >> ./china.conf 2>/dev/null
         sed -e 's|^server=/\(.*\)/114.114.114.114$$|\1|' ./china.conf | egrep -v '^#' > ./china.raw.txt
